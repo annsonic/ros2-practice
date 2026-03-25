@@ -1,6 +1,9 @@
 FROM ros:humble-perception
 
-# 1. 安裝所有必要套件
+# 避免安裝過程中的互動式提問
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 1. 安裝必要套件（整合並清理快取）
 RUN apt-get update && apt-get install -y \
     ros-humble-turtlesim \
     ros-humble-gazebo-ros-pkgs \
@@ -14,26 +17,19 @@ RUN apt-get update && apt-get install -y \
     git curl && \
     rm -rf /var/lib/apt/lists/*
 
-# 2. 安裝 noVNC
-RUN git clone https://github.com/novnc/noVNC.git /opt/noVNC
+# 2. 設定環境變數
+ENV DISPLAY=:0
+ENV TURTLEBOT3_MODEL=burger
+# 確保每次開 shell 都會 source ROS 環境
+RUN echo "source /opt/ros/humble/setup.bash" >> /etc/bash.bashrc
 
-# 3. 建立啟動 VNC 的腳本
+# 3. 建立啟動腳本（自動導向 index.html）
 RUN echo '#!/bin/bash\n\
-export DISPLAY=:0\n\
 Xvfb :0 -screen 0 1280x800x24 &\n\
 sleep 2\n\
 fluxbox &\n\
 x11vnc -display :0 -forever -nopw -shared -rfbport 5900 &\n\
-/opt/noVNC/utils/novnc_proxy --vnc localhost:5900 --listen 6080 &\n\
-sleep 3\n\
-echo "VNC Server started on http://localhost:6080/vnc.html"\n\
-bash' > /usr/local/bin/start-vnc.sh \
+/usr/share/novnc/utils/launch.sh --vnc localhost:5900 --listen 6080' > /usr/local/bin/start-vnc.sh \
 && chmod +x /usr/local/bin/start-vnc.sh
 
-# 4. 環境設定
-RUN echo "export DISPLAY=:0" >> /etc/bash.bashrc && \
-    echo "export TURTLEBOT3_MODEL=burger" >> /etc/bash.bashrc && \
-    echo "source /opt/ros/humble/setup.bash" >> /etc/bash.bashrc
-
-# 5. 設定工作目錄
 WORKDIR /workspaces
