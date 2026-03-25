@@ -1,0 +1,17 @@
+{
+    "name": "ROS 2 Humble Environment",
+    "build": {
+        "dockerfile": "./Dockerfile",
+        "context": "./"
+    },
+    "forwardPorts": [6080],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-python.python",
+                "ms-azuretools.vscode-docker"
+            ]
+        }
+    }
+}
