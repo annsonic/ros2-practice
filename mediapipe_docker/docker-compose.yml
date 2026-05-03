@@ -1,8 +1,18 @@
 services:
   zenohd:
-    image: eclipse/zenoh:latest
-    # 與主機共用網路堆疊，讓主機端 ROS2 節點可直接連接 zenohd（localhost:7447）
+    # 使用與 mediapipe_ai 相同的 ros:kilted-perception 基礎映像，
+    # 確保 rmw_zenohd 版本與容器及主機端的 rmw_zenoh_cpp 完全一致。
+    # （不使用 eclipse/zenoh:latest，避免 zenoh 協定版本不符造成通訊失敗）
+    build: .
     network_mode: host
+    command: /bin/bash -c "source /opt/ros/kilted/setup.bash && ros2 run rmw_zenoh_cpp rmw_zenohd"
+    # 確認 zenohd 確實已在 TCP 7447 埠監聽後，才允許 mediapipe_ai 啟動
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/7447"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
     restart: unless-stopped
 
   mediapipe_ai:
@@ -13,7 +23,10 @@ services:
     ipc: host
     shm_size: 2gb
     depends_on:
-      - zenohd
+      zenohd:
+        # 等待 zenohd 通過 healthcheck（確認 7447 埠可連）才啟動本服務，
+        # 避免 rmw_zenoh_cpp client 因 router 尚未就緒而連線失敗
+        condition: service_healthy
     environment:
       # ROS2 Domain ID 需與主機端一致（預設 0）
       - ROS_DOMAIN_ID=0

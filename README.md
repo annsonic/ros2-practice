@@ -49,23 +49,29 @@ cp /path/to/hand_landmarker.task mediapipe_docker/models/
 >   https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task
 > ```
 
-### Step 2 — 主機端啟動 webcam 節點
+### Step 2 — 建置並啟動 Docker 容器（zenohd router 先就緒）
 
-```bash
-source /opt/ros/kilted/setup.bash
-# ROS2 Kilted 預設即為 rmw_zenoh_cpp，無需額外設定 RMW
-ros2 run v4l2_camera v4l2_camera_node
-```
-
-### Step 3 — 建置並啟動 Docker 容器
-
-`docker compose up` 會同時啟動 `zenohd` router 與 `mediapipe_ai` 服務：
+`docker compose up` 會先啟動 `zenohd` router service，健康檢查通過後再啟動 `mediapipe_ai` 服務：
 
 ```bash
 cd mediapipe_docker
 docker compose build
 docker compose up
 ```
+
+> ⚠️ **請先執行此步驟**，待 zenohd 就緒後再啟動主機端節點（Step 3），  
+> 確保主機端的 rmw_zenoh_cpp 能順利連接 localhost:7447。
+
+### Step 3 — 主機端啟動 webcam 節點
+
+```bash
+source /opt/ros/kilted/setup.bash
+# ROS2 Kilted 預設即為 rmw_zenoh_cpp，無需額外設定 RMW
+# rmw_zenoh_cpp 會自動連接已在 localhost:7447 運行的 zenohd router
+ros2 run v4l2_camera v4l2_camera_node
+```
+
+### Step 4 — 確認一切正常（另開終端機）
 
 ---
 
@@ -77,9 +83,8 @@ docker compose up
 source /opt/ros/kilted/setup.bash
 # rmw_zenoh_cpp 為 Kilted 預設，無需額外設定
 
-# 確認節點已上線
+# 確認節點已上線（應看到 /mediapipe_ai_service）
 ros2 node list
-# 預期看到：/mediapipe_ai_service
 
 # 確認主題已發布
 ros2 topic list
@@ -100,8 +105,8 @@ ros2 topic hz /mediapipe/annotated_image
 ## 網路設定說明
 
 容器使用 `network_mode: host`，直接共用主機的網路介面與 loopback。  
-`docker-compose.yml` 同時啟動一個 **zenohd router** service（同樣使用 `network_mode: host`），  
-主機端與容器內的 ROS2 節點（均使用 Kilted 預設的 `rmw_zenoh_cpp`）都會自動連接 `localhost:7447`，  
+`docker-compose.yml` 啟動一個 **zenohd router** service（使用 Kilted 內建的 `rmw_zenohd`，  
+確保與 rmw_zenoh_cpp 的協定版本完全相符），主機端與容器內的 ROS2 節點都自動連接 `localhost:7447`，  
 透過 zenohd 完成節點發現與訊息傳遞，無需手動設定 RMW 或 Discovery Server。
 
 | 設定項目 | 值 | 說明 |
@@ -111,7 +116,10 @@ ros2 topic hz /mediapipe/annotated_image
 | `shm_size` | `2gb` | 共享記憶體上限 |
 | `ROS_DOMAIN_ID` | `0` | 需與主機端一致（預設 0） |
 | `RMW_IMPLEMENTATION` | `rmw_zenoh_cpp`（預設） | Kilted 預設值，主機端與容器端均無需額外設定 |
-| zenohd | `localhost:7447` | 節點發現中介，由 docker compose 自動啟動 |
+| zenohd | `localhost:7447` | 節點發現中介；使用 `ros2 run rmw_zenoh_cpp rmw_zenohd`，由 docker compose 自動啟動，健康檢查通過後 mediapipe_ai 才會啟動 |
+
+> ⚠️ **啟動順序**：請先 `docker compose up`（等 zenohd 就緒），再於主機端啟動 v4l2_camera_node，  
+> 確保主機端 rmw_zenoh_cpp 能連接到 zenohd router。
 
 ---
 
