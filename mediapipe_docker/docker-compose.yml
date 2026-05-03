@@ -1,0 +1,20 @@
+services:
+  mediapipe_ai:
+    build: .
+    # 與主機共用網路堆疊，讓容器節點透過 DDS multicast 自動與主機端互相發現
+    network_mode: host
+    # 與主機共用 IPC namespace，允許 DDS 使用共享記憶體傳輸（提升效能）
+    ipc: host
+    shm_size: 2gb
+    environment:
+      # ROS2 Domain ID 需與主機端一致（預設 0）
+      - ROS_DOMAIN_ID=0
+      # 改用 CycloneDDS：透過 network_mode: host 的 DDS multicast 自動發現，
+      # 不需要獨立的 zenohd router，也不會有協定版本不符的問題。
+      # 主機端需同樣設定：export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    volumes:
+      # 掛載本機已下載的 MediaPipe 模型權重檔
+      # 使用前請確認 ./models/hand_landmarker.task 存在
+      - ./models:/app/models:ro
+    restart: unless-stopped
