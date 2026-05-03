@@ -49,6 +49,8 @@ cp /path/to/hand_landmarker.task mediapipe_docker/models/
 
 ```bash
 source /opt/ros/kilted/setup.bash
+# ROS2 Kilted 預設 rmw_zenoh_cpp；改用 CycloneDDS 以配合容器端設定
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ros2 run v4l2_camera v4l2_camera_node
 ```
 
@@ -68,6 +70,7 @@ docker compose up
 
 ```bash
 source /opt/ros/kilted/setup.bash
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 
 # 確認節點已上線
 ros2 node list
@@ -101,6 +104,9 @@ ROS2 底層的 DDS（Data Distribution Service）依賴 UDP multicast 做節點�
 | `ipc` | `host` | 共用 IPC namespace，DDS 可使用共享記憶體 |
 | `shm_size` | `2gb` | 共享記憶體上限 |
 | `ROS_DOMAIN_ID` | `0` | 需與主機端一致（預設 0） |
+| `RMW_IMPLEMENTATION` | `rmw_cyclonedds_cpp` | 覆蓋 Kilted 預設的 rmw_zenoh_cpp；CycloneDDS 以 UDP multicast 做節點發現，`host` 模式下可直接被主機端 ROS2 發現，無需額外的 Zenoh router |
+
+> ⚠️  **主機端也必須設定** `export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`，否則 RMW 不一致，雙方節點無法互相發現。
 
 ---
 

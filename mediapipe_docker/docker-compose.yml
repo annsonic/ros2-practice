@@ -9,6 +9,11 @@ services:
     environment:
       # ROS2 Domain ID 需與主機端一致（預設 0）
       - ROS_DOMAIN_ID=0
+      # ROS2 Kilted 預設 rmw_zenoh_cpp；Zenoh 在 Docker network_mode: host 下
+      # 需要 zenohd router 才能讓容器節點被主機端發現。
+      # 改用 CycloneDDS：以 UDP multicast 做節點發現，network_mode: host 下開箱即用。
+      # ⚠️  主機端也必須設定相同值（見 README 啟動步驟）。
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
     volumes:
       # 掛載本機已下載的 MediaPipe 模型權重檔
       # 使用前請確認 ./models/hand_landmarker.task 存在

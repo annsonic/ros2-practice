@@ -3,10 +3,14 @@ FROM ros:kilted-perception
 # 避免安裝過程中的互動式提問
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 安裝系統套件：cv_bridge 使用 apt 版本，避免與 ROS2 ABI 衝突
+# 安裝系統套件：
+#   cv_bridge        — 使用 apt 版本，避免與 ROS2 ABI 衝突
+#   rmw-cyclonedds   — 使用 CycloneDDS 作為 RMW，取代 Kilted 預設的 rmw_zenoh，
+#                      讓容器節點可透過 UDP multicast 被主機端 ROS2 直接發現
 RUN apt-get update && apt-get install -y \
     python3-pip \
-    ros-kilted-cv-bridge && \
+    ros-kilted-cv-bridge \
+    ros-kilted-rmw-cyclonedds-cpp && \
     rm -rf /var/lib/apt/lists/*
 
 # 安裝 Python 套件
