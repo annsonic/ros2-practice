@@ -7,10 +7,14 @@
 ┌─────────────────────┐              ┌──────────────────────────────┐
 │ v4l2_camera_node    │─/image_raw──▶│ mediapipe_ai_service         │
 │ （讀取 webcam）       │              │ （手部辨識）                   │
-└─────────────────────┘              │  ├─ /mediapipe/annotated_image│
-                                     │  └─ /mediapipe/hand_pose      │
-                                     └──────────────────────────────┘
-           └────────── network_mode: host，DDS 自動發現 ────────────┘
+└──────────┬──────────┘              │  ├─ /mediapipe/annotated_image│
+           │                         │  └─ /mediapipe/hand_pose      │
+           │  localhost:7447         └──────────────┬───────────────┘
+           └──────────────┐  ┌──────────────────────┘
+                    ┌─────▼──▼──────┐
+                    │  zenohd router │  （Docker service，network_mode: host）
+                    └───────────────┘
+        └── 所有節點透過 zenohd 互相發現與通訊（rmw_zenoh_cpp 預設） ──┘
 ```
 
 ## 前置條件
@@ -49,12 +53,13 @@ cp /path/to/hand_landmarker.task mediapipe_docker/models/
 
 ```bash
 source /opt/ros/kilted/setup.bash
-# ROS2 Kilted 預設 rmw_zenoh_cpp；改用 CycloneDDS 以配合容器端設定
-export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+# ROS2 Kilted 預設即為 rmw_zenoh_cpp，無需額外設定 RMW
 ros2 run v4l2_camera v4l2_camera_node
 ```
 
 ### Step 3 — 建置並啟動 Docker 容器
+
+`docker compose up` 會同時啟動 `zenohd` router 與 `mediapipe_ai` 服務：
 
 ```bash
 cd mediapipe_docker
@@ -70,7 +75,7 @@ docker compose up
 
 ```bash
 source /opt/ros/kilted/setup.bash
-export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+# rmw_zenoh_cpp 為 Kilted 預設，無需額外設定
 
 # 確認節點已上線
 ros2 node list
@@ -95,18 +100,18 @@ ros2 topic hz /mediapipe/annotated_image
 ## 網路設定說明
 
 容器使用 `network_mode: host`，直接共用主機的網路介面與 loopback。  
-ROS2 底層的 DDS（Data Distribution Service）依賴 UDP multicast 做節點自動發現，  
-`host` 模式讓容器內的 ROS2 節點與主機上的 ROS2 節點**完全透明地互相發現**，無需額外設定 Discovery Server 或手動對應 port。
+`docker-compose.yml` 同時啟動一個 **zenohd router** service（同樣使用 `network_mode: host`），  
+主機端與容器內的 ROS2 節點（均使用 Kilted 預設的 `rmw_zenoh_cpp`）都會自動連接 `localhost:7447`，  
+透過 zenohd 完成節點發現與訊息傳遞，無需手動設定 RMW 或 Discovery Server。
 
 | 設定項目 | 值 | 說明 |
 |---------|-----|------|
-| `network_mode` | `host` | 共用主機網路堆疊 |
-| `ipc` | `host` | 共用 IPC namespace，DDS 可使用共享記憶體 |
+| `network_mode` | `host` | 共用主機網路堆疊（容器與 zenohd 均使用） |
+| `ipc` | `host` | 共用 IPC namespace，Zenoh 可使用共享記憶體 |
 | `shm_size` | `2gb` | 共享記憶體上限 |
 | `ROS_DOMAIN_ID` | `0` | 需與主機端一致（預設 0） |
-| `RMW_IMPLEMENTATION` | `rmw_cyclonedds_cpp` | 覆蓋 Kilted 預設的 rmw_zenoh_cpp；CycloneDDS 以 UDP multicast 做節點發現，`host` 模式下可直接被主機端 ROS2 發現，無需額外的 Zenoh router |
-
-> ⚠️  **主機端也必須設定** `export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp`，否則 RMW 不一致，雙方節點無法互相發現。
+| `RMW_IMPLEMENTATION` | `rmw_zenoh_cpp`（預設） | Kilted 預設值，主機端與容器端均無需額外設定 |
+| zenohd | `localhost:7447` | 節點發現中介，由 docker compose 自動啟動 |
 
 ---
 

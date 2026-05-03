@@ -1,19 +1,23 @@
 services:
+  zenohd:
+    image: eclipse/zenoh:latest
+    # 與主機共用網路堆疊，讓主機端 ROS2 節點可直接連接 zenohd（localhost:7447）
+    network_mode: host
+    restart: unless-stopped
+
   mediapipe_ai:
     build: .
-    # 與主機共用網路堆疊，讓 DDS 多播自動發現主機上的 ROS2 節點
+    # 與主機共用網路堆疊，讓容器節點可連接同一台主機上的 zenohd router
     network_mode: host
-    # 與主機共用 IPC namespace，允許 DDS 使用共享記憶體傳輸（提升效能）
+    # 與主機共用 IPC namespace，允許 Zenoh 使用共享記憶體傳輸（提升效能）
     ipc: host
     shm_size: 2gb
+    depends_on:
+      - zenohd
     environment:
       # ROS2 Domain ID 需與主機端一致（預設 0）
       - ROS_DOMAIN_ID=0
-      # ROS2 Kilted 預設 rmw_zenoh_cpp；Zenoh 在 Docker network_mode: host 下
-      # 需要 zenohd router 才能讓容器節點被主機端發現。
-      # 改用 CycloneDDS：以 UDP multicast 做節點發現，network_mode: host 下開箱即用。
-      # ⚠️  主機端也必須設定相同值（見 README 啟動步驟）。
-      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      # ROS2 Kilted 預設 rmw_zenoh_cpp；節點會自動連接 localhost:7447 的 zenohd router
     volumes:
       # 掛載本機已下載的 MediaPipe 模型權重檔
       # 使用前請確認 ./models/hand_landmarker.task 存在
