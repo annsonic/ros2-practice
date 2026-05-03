@@ -1,0 +1,5 @@
+# cv_bridge 透過 apt 安裝 ros-kilted-cv-bridge，不在此列出
+# opencv-python-headless 提供影像繪圖功能（不需要 GUI）
+mediapipe==0.10.21
+numpy>=1.26,<2.0
+opencv-python-headless>=4.8,<5.0

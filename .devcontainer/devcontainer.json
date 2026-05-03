@@ -1,6 +1,8 @@
 {
-  "name": "ROS2 Turtlesim Development",
-  "image": "ros:humble-perception",
+  "name": "ROS2 Kilted Development",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/github-cli:1": {}
@@ -18,11 +20,5 @@
       }
     }
   },
-  "postCreateCommand": "bash .devcontainer/setup.sh",
-  "remoteUser": "root",
-  "forwardPorts": [6080, 5900],
-  "portsAttributes": {
-    "6080": {"label": "Web VNC", "onAutoForward": "notify"},
-    "5900": {"label": "VNC Server", "onAutoForward": "notify"}
-  }
+  "remoteUser": "root"
 }
