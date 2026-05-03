@@ -4,11 +4,13 @@ FROM ros:kilted-perception
 ENV DEBIAN_FRONTEND=noninteractive
 
 # 安裝系統套件：
-#   cv_bridge — 使用 apt 版本，避免與 ROS2 ABI 衝突
-#   Kilted 預設已包含 rmw_zenoh_cpp，無需額外安裝 RMW 套件
+#   cv_bridge  — 使用 apt 版本，避免與 ROS2 ABI 衝突
+#   rmw-cyclonedds-cpp — 改用 CycloneDDS，透過 network_mode: host 自動與主機端
+#                        DDS multicast 互相發現，不需額外的 zenohd router 程序
 RUN apt-get update && apt-get install -y \
     python3-pip \
-    ros-kilted-cv-bridge && \
+    ros-kilted-cv-bridge \
+    ros-kilted-rmw-cyclonedds-cpp && \
     rm -rf /var/lib/apt/lists/*
 
 # 安裝 Python 套件
