@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 # 安裝 Python 套件
 WORKDIR /app
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
 # 複製節點程式
 COPY ai_service.py .
