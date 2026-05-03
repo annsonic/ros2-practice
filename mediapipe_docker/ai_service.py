@@ -16,8 +16,10 @@ MediaPipe 手部辨識 ROS2 節點
 
 import json
 import os
+import queue
 import sys
 import threading
+import time
 
 import cv2
 import mediapipe as mp
@@ -69,8 +71,16 @@ class MediaPipeHandNode(Node):
         )
 
         self._bridge = CvBridge()
-        self._frame_ts = 0          # 單調遞增時間戳（毫秒），供 MediaPipe 使用
-        self._lock = threading.Lock()
+
+        # ── Worker thread：將 detect_async 移出 ROS2 executor thread ────
+        # queue 容量設為 1，確保 _image_callback 永遠不會 block；
+        # 若 MediaPipe 推斷速度跟不上輸入，直接捨棄舊幀即可。
+        self._queue: queue.Queue = queue.Queue(maxsize=1)
+        self._running = True
+        self._worker_thread = threading.Thread(
+            target=self._worker, name="mediapipe_worker"
+        )
+        self._worker_thread.start()
 
         self.get_logger().info("MediaPipe 手部辨識節點已啟動，等待 /image_raw 影像…")
 
@@ -84,11 +94,24 @@ class MediaPipeHandNode(Node):
 
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=cv_image)
 
-        with self._lock:
-            self._frame_ts += 1          # 確保時間戳單調遞增
-            ts = self._frame_ts
+        # 使用真實 wall-clock 毫秒時間戳，MediaPipe LIVE_STREAM 排程器才能
+        # 正確估計幀率，避免誤判為 1000fps 而 drop 幾乎所有幀。
+        ts = time.monotonic_ns() // 1_000_000
 
-        self._landmarker.detect_async(mp_image, ts)
+        # put_nowait：若 worker 尚未取走上一幀，直接捨棄新幀，不阻塞 executor。
+        try:
+            self._queue.put_nowait((mp_image, ts))
+        except queue.Full:
+            pass
+
+    # ── Worker thread：消費 queue 並呼叫 detect_async ───────────────
+    def _worker(self):
+        while self._running:
+            try:
+                mp_image, ts = self._queue.get(timeout=0.5)
+            except queue.Empty:
+                continue
+            self._landmarker.detect_async(mp_image, ts)
 
     # ── MediaPipe 辨識結果回呼（MediaPipe 內部 thread）────────────────
     def _mediapipe_callback(
@@ -160,6 +183,10 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        node._running = False
+        node._worker_thread.join(timeout=2.0)
+        if node._worker_thread.is_alive():
+            node.get_logger().warning("Worker thread 未在 2 秒內結束，強制繼續關閉。")
         node._landmarker.close()
         node.destroy_node()
         rclpy.shutdown()
