@@ -6,8 +6,8 @@
 
 ## 檔案結構
 
-- `/home/runner/work/ros2-practice/ros2-practice/docker-compose.yml`
-- `/home/runner/work/ros2-practice/ros2-practice/micro_ros_client/Dockerfile`
+- `./docker-compose.yml`
+- `./micro_ros_client/Dockerfile`
 
 ## 前置條件
 
@@ -19,7 +19,7 @@
 在專案根目錄執行：
 
 ```bash
-cd /home/runner/work/ros2-practice/ros2-practice
+cd <你的專案根目錄>/ros2-practice
 docker compose up --build
 ```
 
@@ -47,7 +47,7 @@ ros2 topic echo /microROS/ping
 ### 1) 看容器 log
 
 ```bash
-cd /home/runner/work/ros2-practice/ros2-practice
+cd <你的專案根目錄>/ros2-practice
 docker compose logs -f micro_ros_agent
 docker compose logs -f micro_ros_client
 ```
@@ -59,6 +59,6 @@ log 內應可看到 Agent 監聽 `udp4` 的相關訊息。
 ### 3) 關閉服務
 
 ```bash
-cd /home/runner/work/ros2-practice/ros2-practice
+cd <你的專案根目錄>/ros2-practice
 docker compose down
 ```

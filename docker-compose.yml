@@ -9,7 +9,7 @@ services:
 
   micro_ros_client:
     build:
-      context: /home/runner/work/ros2-practice/ros2-practice/micro_ros_client
+      context: ./micro_ros_client
       dockerfile: Dockerfile
     container_name: micro_ros_client
     network_mode: host
