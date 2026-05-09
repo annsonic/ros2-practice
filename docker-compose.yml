@@ -1,0 +1,27 @@
+services:
+  micro_ros_agent:
+    image: microros/micro-ros-agent:kilted
+    container_name: micro_ros_agent
+    network_mode: host
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    command: udp4 --port 8888 -v6
+
+  micro_ros_client:
+    build:
+      context: /home/runner/work/ros2-practice/ros2-practice/micro_ros_client
+      dockerfile: Dockerfile
+    container_name: micro_ros_client
+    network_mode: host
+    depends_on:
+      - micro_ros_agent
+    environment:
+      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - ROS_DOMAIN_ID=0
+    command: >
+      bash -lc "
+      source /opt/ros/kilted/setup.bash &&
+      source /uros_ws/install/local_setup.bash &&
+      ros2 run micro_ros_setup flash_firmware.sh &&
+      ros2 run micro_ros_setup run_firmware.sh
+      "
