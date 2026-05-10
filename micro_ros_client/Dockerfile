@@ -21,7 +21,9 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 RUN /bin/bash -lc "source /opt/ros/${ROS_DISTRO}/setup.bash && cd ${ROS_WS} && colcon build"
 
-RUN /bin/bash -lc "source /opt/ros/${ROS_DISTRO}/setup.bash && source ${ROS_WS}/install/local_setup.bash && \
+RUN apt-get update && \
+    /bin/bash -lc "source /opt/ros/${ROS_DISTRO}/setup.bash && source ${ROS_WS}/install/local_setup.bash && \
     ros2 run micro_ros_setup create_firmware_ws.sh host && \
     ros2 run micro_ros_setup configure_firmware.sh int32_publisher -t udp -i 127.0.0.1 -p 8888 && \
-    ros2 run micro_ros_setup build_firmware.sh"
+    ros2 run micro_ros_setup build_firmware.sh" && \
+    rm -rf /var/lib/apt/lists/*
