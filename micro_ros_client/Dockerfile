@@ -16,7 +16,9 @@ RUN rosdep init || true && rosdep update
 RUN mkdir -p ${ROS_WS}/src
 RUN /bin/bash -lc "source /opt/ros/${ROS_DISTRO}/setup.bash && cd ${ROS_WS}/src && git clone -b ${ROS_DISTRO} https://github.com/micro-ROS/micro_ros_setup.git"
 
-RUN /bin/bash -lc "source /opt/ros/${ROS_DISTRO}/setup.bash && cd ${ROS_WS} && rosdep install --from-paths src --ignore-src -y"
+RUN apt-get update && \
+    /bin/bash -lc "source /opt/ros/${ROS_DISTRO}/setup.bash && cd ${ROS_WS} && rosdep install --from-paths src --ignore-src -y" && \
+    rm -rf /var/lib/apt/lists/*
 RUN /bin/bash -lc "source /opt/ros/${ROS_DISTRO}/setup.bash && cd ${ROS_WS} && colcon build"
 
 RUN /bin/bash -lc "source /opt/ros/${ROS_DISTRO}/setup.bash && source ${ROS_WS}/install/local_setup.bash && \
