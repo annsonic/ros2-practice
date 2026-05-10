@@ -16,12 +16,12 @@ services:
     depends_on:
       - micro_ros_agent
     environment:
-      - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      - RMW_IMPLEMENTATION=rmw_microxrcedds
       - ROS_DOMAIN_ID=0
     command: >
       bash -lc "
       source /opt/ros/kilted/setup.bash &&
       source /uros_ws/install/local_setup.bash &&
-      ros2 run micro_ros_setup flash_firmware.sh &&
-      ros2 run micro_ros_setup run_firmware.sh
+      source /uros_ws/firmware/install/local_setup.bash &&
+      ros2 run micro_ros_demos_rclc int32_publisher
       "

@@ -33,14 +33,13 @@ docker compose up --build
 
 ```bash
 source /opt/ros/kilted/setup.bash
-export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 export ROS_DOMAIN_ID=0
 
 ros2 topic list
-ros2 topic echo /microROS/ping
+ros2 topic echo /std_msgs_msg_Int32
 ```
 
-如果一切正常，`ros2 topic echo /microROS/ping` 會持續收到 `std_msgs/msg/Int32` 訊息。
+如果一切正常，`ros2 topic echo /std_msgs_msg_Int32` 會持續收到 `std_msgs/msg/Int32` 訊息。
 
 ## 常用除錯
 
