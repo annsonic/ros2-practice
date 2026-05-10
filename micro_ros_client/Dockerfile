@@ -7,6 +7,7 @@ ENV ROS_WS=/uros_ws
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     python3-colcon-common-extensions \
+    python3-pip \
     python3-rosdep \
     ros-kilted-rmw-cyclonedds-cpp \
     && rm -rf /var/lib/apt/lists/*
@@ -25,5 +26,6 @@ RUN apt-get update && \
     /bin/bash -lc "source /opt/ros/${ROS_DISTRO}/setup.bash && source ${ROS_WS}/install/local_setup.bash && \
     ros2 run micro_ros_setup create_firmware_ws.sh host && \
     ros2 run micro_ros_setup configure_firmware.sh int32_publisher -t udp -i 127.0.0.1 -p 8888 && \
+    python3 -m pip install --no-cache-dir --break-system-packages numpy==1.26.4 && \
     ros2 run micro_ros_setup build_firmware.sh" && \
     rm -rf /var/lib/apt/lists/*
