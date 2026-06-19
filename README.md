@@ -4,8 +4,6 @@
 ESP32 訂閱 `micro_ros_name` 主題接收名字，並在 `micro_ros_response` 主題回應 `"Hello <name>!"`。
 
 ## 環境
-
-## 環境
 - 作業系統 Ubuntu 24.04
 - VS Code
 - ESP32 (WROOM) 開發板
