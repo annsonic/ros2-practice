@@ -21,7 +21,7 @@ char kPassword[] = WIFI_PASSWORD;
 // Network / Agent configuration
 // =========================
 IPAddress kAgentIP;
-const uint16_t kAgentPort = std::stoi(AGENT_PORT);
+const uint16_t kAgentPort = static_cast<uint16_t>(strtoul(AGENT_PORT, nullptr, 10));
 const char* kNodeName = "wifi_pubsub_node";
 
 // =========================
