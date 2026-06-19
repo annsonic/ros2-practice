@@ -89,7 +89,9 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  kAgentIP.fromString(AGENT_IP);   // micro-ROS Agent host IP
+  if (!kAgentIP.fromString(AGENT_IP)) {   // micro-ROS Agent host IP
+    Serial.println("[INIT] Invalid AGENT_IP in secrets.h");
+  }
 
   Serial.println("\n[INIT] Starting micro-ROS Wi-Fi pub/sub...");
 
