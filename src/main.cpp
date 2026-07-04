@@ -9,18 +9,12 @@
 
 #include <std_msgs/msg/int32.h>
 
+#include "config.h"
+
 #if !defined(MICRO_ROS_TRANSPORT_ARDUINO_SERIAL)
 #error This example is only avaliable for Arduino framework with serial transport.
 #endif
 
-#define SERVO_CHANNEL   15       // PCA9685 的 channel 15
-#define SERVO_FREQ      50      // Servo 使用 50Hz
-#define SERVOMIN        102     // 0° 對應的脈衝 (約 0.5ms)
-#define SERVOMAX        512     // 180° 對應的脈衝 (約 2.5ms)
-#define SERVO_CENTER    307     // 90° 對應的脈衝 (中間值)
-#define ANGLE_MIN       -15
-#define ANGLE_MAX       15
-#define ANGLE_STEP      1       // 每次移動的角度
 
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
@@ -33,7 +27,7 @@ rcl_allocator_t allocator;
 rcl_node_t node;
 rcl_timer_t timer;
 
-int current_angle = ANGLE_MIN;  // 目前角度
+int current_angle = CURRENT_ANGLE;  // 目前角度
 int direction = 1;              
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){error_loop();}}
