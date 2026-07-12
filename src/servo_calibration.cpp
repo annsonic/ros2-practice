@@ -2,25 +2,68 @@
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
-Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver(0x40);
 
 // 調整範圍設為變數
-uint16_t current_pulse = 127; // 目前的脈衝值
+uint16_t current_pulse = 327; // 目前的脈衝值
 uint16_t min_pulse = 0;       // 最小脈衝值
 uint16_t max_pulse = 600;     // 最大脈衝值
 uint16_t pulse_step = 10;     // 每次調整的步長
 
 void printCurrentStatus();
+void resetI2C();
 
 void setup()
 {
   Serial.begin(115200);
   delay(500);
 
-  Wire.begin();
-  if (!pwm.begin())
+  delay(500);
+
+  pinMode(21, INPUT_PULLUP);
+  pinMode(22, INPUT_PULLUP);
+  delay(100);
+
+  Wire.begin(21, 22, 50000);
+  Wire.setTimeOut(1000);
+  delay(500);
+
+  bool found40 = false;
+  for (byte addr = 0x38; addr < 0x42; addr++)
   {
-    Serial.println("✗ PCA9685 not found!");
+    Wire.beginTransmission(addr);
+    if (Wire.endTransmission() == 0)
+    {
+      Serial.printf("找到裝置: 0x%02X\n", addr);
+      if (addr == 0x40)
+        found40 = true;
+    }
+  }
+  Serial.println("掃描完成");
+  if (!found40)
+  {
+    Serial.println("✗ 未偵測到 0x40，請檢查接線");
+    while (1)
+      delay(100);
+  }
+
+  Serial.println("開始初始化 PCA9685...");
+  int retry = 3;
+  while (retry > 0)
+  {
+    if (pwm.begin())
+    { // 明確指定地址
+      Serial.println("✓ PCA9685 初始化成功");
+      break;
+    }
+    Serial.printf("初始化失敗，重試中... (%d)\n", retry);
+    delay(500);
+    retry--;
+  }
+
+  if (retry == 0)
+  {
+    Serial.println("✗ PCA9685 無法初始化！");
     while (1)
       delay(100);
   }
